@@ -12,24 +12,48 @@
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   
-  <!-- 載入 Babel (讓瀏覽器可以直接看懂 React 語法) -->
+  <!-- 載入 Babel -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
   <style>
     body { background-color: #0a0a0a; color: #e5e7eb; font-family: sans-serif; -webkit-tap-highlight-color: transparent;}
     .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
-    /* 隱藏滾動條但保留滾動功能 */
     ::-webkit-scrollbar { width: 0px; background: transparent; }
   </style>
 </head>
 <body>
   <div id="root"></div>
 
-  <!-- React 程式碼開始 -->
+  <script type="module">
+    // 載入 Firebase 模組
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+    // 您的專屬金鑰
+    const firebaseConfig = {
+      apiKey: "AIzaSyA8DOo400N6Emgq9fLJ1Lei4EhyTWqK5JM",
+      authDomain: "a801008-8fd7a.firebaseapp.com",
+      projectId: "a801008-8fd7a",
+      storageBucket: "a801008-8fd7a.firebasestorage.app",
+      messagingSenderId: "209848167070",
+      appId: "1:209848167070:web:791b05e809d135c9f5298f",
+      measurementId: "G-D2J8RXZ5CD"
+    };
+
+    // 初始化 Firebase 並暴露給 React 使用
+    const app = initializeApp(firebaseConfig);
+    window.db = getFirestore(app);
+    window.auth = getAuth(app);
+    window.fs = { collection, onSnapshot, doc, setDoc, deleteDoc, signInAnonymously };
+    
+    // 通知 React 可以開始連線了
+    window.dispatchEvent(new Event('firebaseReady'));
+  </script>
+
   <script type="text/babel">
     const { useState, useEffect } = React;
 
-    // --- 圖示元件 (內建 SVG，不需額外安裝套件) ---
     const Icon = ({ name, size = 24, className = "" }) => {
       const iconPaths = {
         MapIcon: <><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon><line x1="9" y1="3" x2="9" y2="18"></line><line x1="15" y1="6" x2="15" y2="21"></line></>,
@@ -46,7 +70,6 @@
         Navigation: <><polygon points="3 11 22 2 13 21 11 13 3 11"/></>,
         Car: <><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></>
       };
-
       return (
         <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
           {iconPaths[name]}
@@ -54,7 +77,6 @@
       );
     };
 
-    // --- 資料庫 ---
     const itineraryData = [
       {
         day: "Day1 - 10/24 - 初入謎城",
@@ -63,31 +85,31 @@
           { id: "d1-t1", time: "", type: "transit", title: "車程預估", desc: "約 2.5 - 3 小時" },
           { id: "d1-2", time: "10:30", type: "location", title: "肉蛋中西式早餐店", desc: "早午餐補充能量", address: "臺中市北區健行路748號" },
           { id: "d1-t2", time: "", type: "transit", title: "車程預估", desc: "約 5 分鐘" },
-          { id: "d1-3", time: "13:00~15:30", type: "location", title: "哇沙謎江戶時代館", desc: "【時光列車】全員7位", address: "臺中市北區梅川里永興街370號B1之4" },
-          { id: "d1-t3", time: "", type: "transit", title: "車程預估", desc: "約 10 分鐘" },
-          { id: "d1-4", time: "15:30", type: "location", title: "天利食堂台中青島店", desc: "下午茶補給", address: "臺中市北屯區平德里青島路三段143號" },
+          { id: "d1-3", time: "13:00~15:30", type: "location", title: "哇沙謎江戶時代館", desc: "【時光列車】全員7位 800/人", address: "臺中市北區梅川里永興街370號B1之4" },
+          { id: "d1-t3", time: "", type: "transit", title: "車程預估", desc: "約 8-10 分鐘" },
+          { id: "d1-4", time: "15:30後", type: "location", title: "天利食堂台中青島店", desc: "下午茶補給", address: "臺中市北屯區平德里青島路三段143號" },
           { id: "d1-t4", time: "", type: "transit", title: "分支車程", desc: "兵分兩路" },
           { id: "d1-5", time: "17:00", type: "location", title: "Loop迴圈(頭七) / 哇沙謎(冒險王)", desc: "Loop: 小開、榮森 | 哇沙謎: 另外5人", address: "臺中市北屯區文心路四段188號" },
           { id: "d1-t5", time: "", type: "transit", title: "車程預估", desc: "約 30 分鐘" },
-          { id: "d1-6", time: "19:30", type: "location", title: "東海牛棚背包客棧", desc: "存檔點 (住宿休息)", address: "臺中市龍井區新東里台灣大道五段3巷42弄22號" },
+          { id: "d1-6", time: "19:30", type: "location", title: "東海牛棚背包客棧", desc: "存檔點 (住宿休息) 486/人", address: "臺中市龍井區新東里台灣大道五段3巷42弄22號" },
         ]
       },
       {
         day: "Day2 - 10/25 - 深入謎團",
         items: [
-          { id: "d2-1", time: "早上", type: "location", title: "東海牛棚背包客棧", desc: "退房載入存檔", address: "臺中市龍井區新東里台灣大道五段3巷42弄22號" },
+          { id: "d2-1", time: "早上", type: "location", title: "東海牛棚背包客棧", desc: "退房吃早午餐", address: "臺中市龍井區新東里台灣大道五段3巷42弄22號" },
           { id: "d2-t1", time: "", type: "transit", title: "車程預估", desc: "約 20 分鐘" },
-          { id: "d2-2", time: "11:00", type: "location", title: "木需奶奶Brunch", desc: "戰前補給", address: "臺中市西屯區何南里臺灣大道二段753號" },
+          { id: "d2-2", time: "12:00前完食", type: "location", title: "木需奶奶Brunch", desc: "戰前補給", address: "臺中市西屯區何南里臺灣大道二段753號" },
           { id: "d2-t2", time: "", type: "transit", title: "車程預估", desc: "約 10 分鐘" },
-          { id: "d2-3", time: "12:00~14:00", type: "location", title: "Escer異世客 華美店", desc: "【暗影潛行】全員8位", address: "臺中市西屯區何福里寧漢二街7號" },
-          { id: "d2-t3", time: "", type: "transit", title: "車程預估", desc: "約 15 分鐘" },
-          { id: "d2-4", time: "15:00~17:00", type: "location", title: "笨蛋工作室 美村館", desc: "【平安戲院】全員7位", address: "臺中市西區忠明里美村路一段36號B1" },
+          { id: "d2-3", time: "12:00~14:00", type: "location", title: "Escer異世客 華美店", desc: "【暗影潛行】共8人 1000/人", address: "臺中市西屯區何福里寧漢二街7號" },
+          { id: "d2-t3", time: "", type: "transit", title: "車程預估", desc: "約 10-15 分鐘" },
+          { id: "d2-4", time: "15:00~17:00", type: "location", title: "笨蛋工作室 美村館", desc: "【平安戲院】共7人", address: "臺中市西區忠明里美村路一段36號B1" },
           { id: "d2-t4", time: "", type: "transit", title: "車程預估", desc: "約 40 分鐘" },
-          { id: "d2-5", time: "18:00", type: "location", title: "臻記腸粉湯品", desc: "最終補給", address: "臺中市豐原區中陽里圓環東路475號" },
-          { id: "d2-t5", time: "", type: "transit", title: "車程預估", desc: "約 5 分鐘" },
-          { id: "d2-6", time: "19:00~21:00", type: "location", title: "哇沙謎創意工作室二館", desc: "【秘令2】全員7位", address: "臺中市豐原區中陽里自強街77號" },
+          { id: "d2-5", time: "18:00左右", type: "location", title: "臻記腸粉湯品", desc: "最終補給", address: "臺中市豐原區中陽里圓環東路475號" },
+          { id: "d2-t5", time: "", type: "transit", title: "車程預估", desc: "約 3-5 分鐘" },
+          { id: "d2-6", time: "19:00~21:00", type: "location", title: "哇沙謎二館", desc: "【秘令2】共7人 700/人", address: "臺中市豐原區中陽里自強街77號" },
           { id: "d2-t6", time: "", type: "transit", title: "車程預估", desc: "約 2.5 - 3 小時" },
-          { id: "d2-7", time: "21:30", type: "location", title: "撤離回高雄", desc: "預計凌晨1點抵達小港站", address: "高雄市小港區二苓里沿海一路280號" },
+          { id: "d2-7", time: "21:30出發", type: "location", title: "撤離回高雄", desc: "預計凌晨1點抵達小港站", address: "高雄市小港區二苓里沿海一路280號" },
         ]
       }
     ];
@@ -102,8 +124,7 @@
 
     const PARTICIPANTS = ['小開', '雨婷', '柚子', '魚魚', '小若', 'NICK', '阿姚', '榮森', '賀密'];
 
-    // --- 頁籤一：行動路徑元件 ---
-    const ItineraryTab = ({ notes, setNotes }) => {
+    const ItineraryTab = ({ notes, handleSaveNote }) => {
       const [editingId, setEditingId] = useState(null);
       const [tempNote, setTempNote] = useState("");
 
@@ -112,8 +133,8 @@
         setTempNote(currentNote || "");
       };
 
-      const handleSave = (id) => {
-        setNotes(prev => ({ ...prev, [id]: tempNote }));
+      const onSave = (id) => {
+        handleSaveNote(id, tempNote);
         setEditingId(null);
       };
 
@@ -172,7 +193,7 @@
                             {editingId === item.id ? (
                               <div className="flex gap-2">
                                 <input type="text" className="flex-1 bg-gray-950 border border-yellow-700 text-white p-2 rounded text-sm focus:outline-none focus:border-yellow-400" placeholder="輸入備註事項..." value={tempNote} onChange={(e) => setTempNote(e.target.value)} />
-                                <button onClick={() => handleSave(item.id)} className="bg-yellow-600 hover:bg-yellow-500 text-black p-2 rounded transition-colors">
+                                <button onClick={() => onSave(item.id)} className="bg-yellow-600 hover:bg-yellow-500 text-black p-2 rounded transition-colors">
                                   <Icon name="Check" size={16} />
                                 </button>
                               </div>
@@ -197,7 +218,6 @@
       );
     };
 
-    // --- 頁籤二：情報局元件 ---
     const StoreCard = ({ store }) => {
       const [expanded, setExpanded] = useState(false);
       return (
@@ -237,8 +257,7 @@
       </div>
     );
 
-    // --- 頁籤三：軍費管理元件 ---
-    const ExpensesTab = ({ expenses, setExpenses }) => {
+    const ExpensesTab = ({ expenses, handleAddExpense, handleDeleteExpense }) => {
       const [newItem, setNewItem] = useState("");
       const [newAmount, setNewAmount] = useState("");
       const [payer, setPayer] = useState(PARTICIPANTS[0]);
@@ -250,19 +269,16 @@
         setSplitAmong(prev => prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]);
       };
 
-      const handleAdd = (e) => {
+      const onSubmit = (e) => {
         e.preventDefault();
         const amountNum = parseInt(newAmount, 10);
         if (!newItem.trim() || isNaN(amountNum) || amountNum <= 0) return;
         if (splitType === 'custom' && splitAmong.length === 0) return;
         const finalSplit = splitType === 'all' ? [...PARTICIPANTS] : splitAmong;
-        const expense = { id: Date.now().toString(), name: newItem, amount: amountNum, payer: payer, splitAmong: finalSplit };
-        setExpenses(prev => [...prev, expense]);
+        
+        handleAddExpense({ name: newItem, amount: amountNum, payer: payer, splitAmong: finalSplit });
+        
         setNewItem(""); setNewAmount(""); setSplitType('all'); setSplitAmong([...PARTICIPANTS]);
-      };
-
-      const handleDelete = (id) => {
-        setExpenses(prev => prev.filter(exp => exp.id !== id));
       };
 
       const balances = {};
@@ -314,7 +330,7 @@
             </div>
           )}
 
-          <form onSubmit={handleAdd} className="bg-gray-800 p-4 rounded-xl border border-gray-700 mb-6 shadow-lg">
+          <form onSubmit={onSubmit} className="bg-gray-800 p-4 rounded-xl border border-gray-700 mb-6 shadow-lg">
             <h3 className="text-sm text-yellow-600 uppercase tracking-widest mb-3 font-bold">新增帳單</h3>
             <div className="space-y-3">
               <div className="flex gap-2">
@@ -350,7 +366,7 @@
                 )}
               </div>
               <button type="submit" className="w-full bg-yellow-600 hover:bg-yellow-500 text-black p-3 rounded-lg flex items-center justify-center gap-2 font-black mt-2">
-                <Icon name="Plus" size={18} /> 加入帳單
+                <Icon name="Plus" size={18} /> 加入雲端帳單
               </button>
             </div>
           </form>
@@ -366,7 +382,7 @@
                 
                 return (
                   <div key={item.id} className="bg-gray-800/80 rounded-xl border border-gray-700 p-4 relative">
-                    <button onClick={() => handleDelete(item.id)} className="absolute top-4 right-4 text-gray-600 hover:text-red-400 bg-gray-900 p-1.5 rounded-md">
+                    <button onClick={() => handleDeleteExpense(item.id)} className="absolute top-4 right-4 text-gray-600 hover:text-red-400 bg-gray-900 p-1.5 rounded-md">
                       <Icon name="Trash2" size={16} />
                     </button>
                     <div className="pr-10">
@@ -406,41 +422,118 @@
       );
     };
 
-    // --- 主程式 ---
     const App = () => {
       const [activeTab, setActiveTab] = useState('itinerary');
       const [notes, setNotes] = useState({});
       const [expenses, setExpenses] = useState([]);
-      const [isLoaded, setIsLoaded] = useState(false);
+      const [syncStatus, setSyncStatus] = useState('🟡 連線中...');
 
       useEffect(() => {
-        const savedNotes = localStorage.getItem('escapeRoomNotes');
-        const savedExpenses = localStorage.getItem('escapeRoomExpenses');
-        if (savedNotes) setNotes(JSON.parse(savedNotes));
-        if (savedExpenses) setExpenses(JSON.parse(savedExpenses));
-        setIsLoaded(true);
+        const setupFirebase = async () => {
+          if (!window.fs) {
+            setSyncStatus('🔴 無法連線');
+            return;
+          }
+
+          const { collection, onSnapshot, doc, signInAnonymously } = window.fs;
+          
+          try {
+            // 匿名登入 (確保 Firebase 可以正常運作)
+            await signInAnonymously(window.auth);
+            
+            // 1. 同步「備註」資料
+            const notesDocRef = doc(window.db, "taichung_trip", "notes_data");
+            onSnapshot(notesDocRef, (docSnap) => {
+              if (docSnap.exists()) {
+                setNotes(docSnap.data());
+              }
+            });
+
+            // 2. 同步「軍費」資料
+            const expensesColRef = collection(window.db, "taichung_trip_expenses");
+            onSnapshot(expensesColRef, (snapshot) => {
+              const exps = [];
+              snapshot.forEach((docSnap) => {
+                exps.push({ id: docSnap.id, ...docSnap.data() });
+              });
+              // 按照建立時間排序
+              exps.sort((a, b) => a.createdAt - b.createdAt);
+              setExpenses(exps);
+              setSyncStatus('🟢 雲端同步中');
+            }, (error) => {
+              console.error(error);
+              setSyncStatus('🔴 連線失敗');
+            });
+
+          } catch (error) {
+            console.error("Firebase 連線錯誤:", error);
+            setSyncStatus('🔴 連線失敗');
+          }
+        };
+
+        // 監聽 Firebase 載入完成事件
+        if (window.fs) {
+          setupFirebase();
+        } else {
+          window.addEventListener('firebaseReady', setupFirebase);
+        }
+        
+        return () => window.removeEventListener('firebaseReady', setupFirebase);
       }, []);
 
-      useEffect(() => {
-        if (isLoaded) localStorage.setItem('escapeRoomNotes', JSON.stringify(notes));
-      }, [notes, isLoaded]);
+      // 儲存備註到雲端
+      const handleSaveNote = async (id, text) => {
+        const { doc, setDoc } = window.fs;
+        const newNotes = { ...notes, [id]: text };
+        setNotes(newNotes); // 先更新畫面
+        try {
+          await setDoc(doc(window.db, "taichung_trip", "notes_data"), newNotes, { merge: true });
+        } catch (e) {
+          alert("儲存失敗，請檢查網路連線");
+        }
+      };
 
-      useEffect(() => {
-        if (isLoaded) localStorage.setItem('escapeRoomExpenses', JSON.stringify(expenses));
-      }, [expenses, isLoaded]);
+      // 新增軍費到雲端
+      const handleAddExpense = async (expenseData) => {
+        const { doc, setDoc } = window.fs;
+        const expenseId = Date.now().toString(); // 用時間戳當 ID
+        const newExpense = {
+          ...expenseData,
+          createdAt: Date.now()
+        };
+        try {
+          await setDoc(doc(window.db, "taichung_trip_expenses", expenseId), newExpense);
+        } catch (e) {
+          alert("新增失敗，請檢查網路連線");
+        }
+      };
+
+      // 刪除雲端軍費
+      const handleDeleteExpense = async (id) => {
+        if(!confirm("確定要刪除這筆帳單嗎？")) return;
+        const { doc, deleteDoc } = window.fs;
+        try {
+          await deleteDoc(doc(window.db, "taichung_trip_expenses", id));
+        } catch (e) {
+          alert("刪除失敗，請檢查網路連線");
+        }
+      };
 
       return (
         <div className="min-h-screen bg-[#0a0a0a] text-gray-200 pb-[72px]">
-          <header className="bg-black border-b border-yellow-900/50 p-4 sticky top-0 z-20 shadow-lg shadow-black/50">
+          <header className="bg-black border-b border-yellow-900/50 p-4 sticky top-0 z-20 shadow-lg shadow-black/50 relative">
             <h1 className="text-center text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600 tracking-wider">
               謎霧行動：台中48小時
             </h1>
+            <span className="absolute top-2 right-2 text-[10px] bg-gray-900 px-2 py-1 rounded-full border border-gray-700 text-gray-400 shadow-sm">
+              {syncStatus}
+            </span>
           </header>
 
           <main className="max-w-md mx-auto w-full">
-            {activeTab === 'itinerary' && <ItineraryTab notes={notes} setNotes={setNotes} />}
+            {activeTab === 'itinerary' && <ItineraryTab notes={notes} handleSaveNote={handleSaveNote} />}
             {activeTab === 'stores' && <StoresTab />}
-            {activeTab === 'expenses' && <ExpensesTab expenses={expenses} setExpenses={setExpenses} />}
+            {activeTab === 'expenses' && <ExpensesTab expenses={expenses} handleAddExpense={handleAddExpense} handleDeleteExpense={handleDeleteExpense} />}
           </main>
 
           <nav className="fixed bottom-0 left-0 right-0 bg-black border-t border-gray-800 z-30 pb-safe">
