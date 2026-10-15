@@ -25,9 +25,9 @@
   <div id="root"></div>
 
   <script type="module">
-    // 載入 Firebase 模組
+    // 載入 Firebase 模組，並加上 updateDoc 功能
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
     // 您的專屬金鑰
     const firebaseConfig = {
@@ -43,7 +43,7 @@
     // 初始化 Firebase 並暴露給 React 使用
     const app = initializeApp(firebaseConfig);
     window.db = getFirestore(app);
-    window.fs = { collection, onSnapshot, doc, setDoc, deleteDoc };
+    window.fs = { collection, onSnapshot, doc, setDoc, deleteDoc, updateDoc };
     
     // 通知 React 可以開始連線了
     window.dispatchEvent(new Event('firebaseReady'));
@@ -66,7 +66,8 @@
         Clock: <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>,
         MapPin: <><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></>,
         Navigation: <><polygon points="3 11 22 2 13 21 11 13 3 11"/></>,
-        Car: <><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></>
+        Car: <><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></>,
+        Phone: <><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></>
       };
       return (
         <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -77,23 +78,23 @@
 
     const itineraryData = [
       {
-        day: "Day 1 (10/24) - 初入謎城",
+        day: "Day1 - 10/24 - 初入謎城",
         items: [
           { id: "d1-1", time: "07:30", type: "location", title: "高雄 R3 小港站3號出口", desc: "集合出發！ (譚董車 0978250530)", address: "高雄市小港區二苓里沿海一路280號" },
           { id: "d1-t1", time: "", type: "transit", title: "車程預估", desc: "約 2.5 - 3 小時" },
-          { id: "d1-2", time: "10:30", type: "location", title: "肉蛋中西式早餐店", desc: "早午餐補充能量", address: "臺中市北區健行路748號" },
+          { id: "d1-2", time: "10:00", type: "location", title: "肉蛋中西式早餐店", desc: "早午餐補充能量", address: "臺中市北區健行路748號" },
           { id: "d1-t2", time: "", type: "transit", title: "車程預估", desc: "約 5 分鐘" },
           { id: "d1-3", time: "13:00~15:30", type: "location", title: "哇沙謎江戶時代館", desc: "【時光列車】全員7位 800/人", address: "臺中市北區梅川里永興街370號B1之4" },
           { id: "d1-t3", time: "", type: "transit", title: "車程預估", desc: "約 8-10 分鐘" },
           { id: "d1-4", time: "15:30後", type: "location", title: "天利食堂台中青島店", desc: "下午茶補給", address: "臺中市北屯區平德里青島路三段143號" },
           { id: "d1-t4", time: "", type: "transit", title: "分支車程", desc: "兵分兩路" },
-          { id: "d1-5", time: "17:00", type: "location", title: "Loop迴圈(頭七) / 哇沙謎(冒險王)", desc: "Loop: 小開、榮森 | 哇沙謎: 另外5人", address: "臺中市北屯區文心路四段188號" },
+          { id: "d1-5", time: "17:00", type: "location", title: "Loop迴圈(頭七) / 哇沙謎(冒險王)", desc: "Loop: 小開、榮森 | 哇沙謎: 另外5人", address: "兵分兩路" },
           { id: "d1-t5", time: "", type: "transit", title: "車程預估", desc: "約 30 分鐘" },
           { id: "d1-6", time: "19:30", type: "location", title: "東海牛棚背包客棧", desc: "存檔點 (住宿休息) 486/人", address: "臺中市龍井區新東里台灣大道五段3巷42弄22號" },
         ]
       },
       {
-        day: "Day 2 (10/25) - 深入謎團",
+        day: "Day2 - 10/25 - 深入謎團",
         items: [
           { id: "d2-1", time: "早上", type: "location", title: "東海牛棚背包客棧", desc: "退房吃早午餐", address: "臺中市龍井區新東里台灣大道五段3巷42弄22號" },
           { id: "d2-t1", time: "", type: "transit", title: "車程預估", desc: "約 20 分鐘" },
@@ -113,11 +114,11 @@
     ];
 
     const storesData = [
-      { id: 1, name: "哇沙謎江戶時代館", address: "臺中市北區梅川里永興街370號B1之4", phone: "0909-317-006", games: "時光列車、冒險王" },
-      { id: 2, name: "Loop迴圈密室逃脫旗艦店", address: "臺中市北屯區文心路四段188號", phone: "04-2238-6610", games: "頭七" },
-      { id: 3, name: "Escer異世客 華美店", address: "臺中市西屯區何福里寧漢二街7號", phone: "04-2313-0819", games: "暗影潛行" },
-      { id: 4, name: "笨蛋工作室 美村旗艦館", address: "臺中市西區忠明里美村路一段36號B1", phone: "04-2322-0611", games: "平安戲院" },
-      { id: 5, name: "哇沙謎創意工作室二館", address: "臺中市豐原區中陽里自強街77號", phone: "0988-129-373", games: "秘令2" },
+      { id: 1, name: "哇沙謎江戶時代館", address: "臺中市北區梅川里永興街370號B1之4", phone: "0909-317-006", hours: "平日 13:00-22:00 / 假日 10:00-22:00", games: "時光列車、冒險王" },
+      { id: 2, name: "Loop迴圈密室逃脫旗艦店", address: "臺中市北屯區文心路四段188號", phone: "04-2238-6610", hours: "10:00 - 22:00", games: "頭七" },
+      { id: 3, name: "Escer異世客 華美店", address: "臺中市西屯區何福里寧漢二街7號", phone: "04-2313-0819", hours: "10:00 - 22:00", games: "暗影潛行" },
+      { id: 4, name: "笨蛋工作室 美村旗艦館", address: "臺中市西區忠明里美村路一段36號B1", phone: "04-2322-0611", hours: "平日 13:00-21:30 / 假日 10:00-22:00 (週三休)", games: "平安戲院" },
+      { id: 5, name: "哇沙謎創意工作室二館", address: "臺中市豐原區中陽里自強街77號", phone: "0988-129-373", hours: "13:00 - 22:00", games: "秘令2" },
     ];
 
     const PARTICIPANTS = ['小開', '雨婷', '柚子', '魚魚', '小若', 'NICK', '阿姚', '榮森', '賀密'];
@@ -150,10 +151,12 @@
               <div className="relative border-l-2 border-yellow-700/50 ml-4 pl-6 space-y-6">
                 {dayData.items.map((item, index) => {
                   let navUrl = "";
-                  if (item.type === 'location' && item.address) {
+                  
+                  // 處理一般單站導航
+                  if (item.type === 'location' && item.address && item.id !== 'd1-5') {
                     const prevLocations = dayData.items.slice(0, index).filter(i => i.type === 'location' && i.address);
                     const prevLocation = prevLocations.length > 0 ? prevLocations[prevLocations.length - 1] : null;
-                    if (prevLocation) {
+                    if (prevLocation && prevLocation.id !== 'd1-5') {
                       navUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(prevLocation.address)}&destination=${encodeURIComponent(item.address)}`;
                     } else {
                       navUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.address)}`;
@@ -179,10 +182,23 @@
                             <h4 className={`font-bold ${item.type === 'location' ? 'text-yellow-100 text-lg' : 'text-gray-400 text-sm'}`}>{item.title}</h4>
                             <p className="text-gray-300 text-sm mt-1">{item.desc}</p>
                           </div>
-                          {item.type === 'location' && navUrl && (
-                            <a href={navUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 bg-yellow-600/20 hover:bg-yellow-600/40 text-yellow-500 border border-yellow-600/50 px-2 py-1 rounded text-xs font-bold transition-colors shrink-0 ml-2">
-                              <Icon name="Navigation" size={14} /> 導航
-                            </a>
+                          
+                          {/* 針對 d1-5 兵分兩路提供兩個導航按鈕 */}
+                          {item.id === 'd1-5' ? (
+                            <div className="flex flex-col gap-1 shrink-0 ml-2">
+                              <a href={`https://www.google.com/maps/dir/?api=1&origin=臺中市北屯區平德里青島路三段143號&destination=臺中市北屯區文心路四段188號`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 bg-yellow-600/20 hover:bg-yellow-600/40 text-yellow-500 border border-yellow-600/50 px-2 py-1 rounded text-xs font-bold transition-colors">
+                                <Icon name="Navigation" size={12} /> 往 Loop
+                              </a>
+                              <a href={`https://www.google.com/maps/dir/?api=1&origin=臺中市北屯區平德里青島路三段143號&destination=臺中市北區梅川里永興街370號B1之4`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 border border-blue-600/50 px-2 py-1 rounded text-xs font-bold transition-colors">
+                                <Icon name="Navigation" size={12} /> 往 哇沙謎
+                              </a>
+                            </div>
+                          ) : (
+                            item.type === 'location' && navUrl && (
+                              <a href={navUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 bg-yellow-600/20 hover:bg-yellow-600/40 text-yellow-500 border border-yellow-600/50 px-2 py-1 rounded text-xs font-bold transition-colors shrink-0 ml-2">
+                                <Icon name="Navigation" size={14} /> 導航
+                              </a>
+                            )
                           )}
                         </div>
                         
@@ -231,8 +247,12 @@
                 <span className="text-gray-200">{store.address}</span>
               </div>
               <div className="flex items-start gap-3">
-                <Icon name="Clock" className="text-yellow-600 mt-1 flex-shrink-0" size={18} />
+                <Icon name="Phone" className="text-yellow-600 mt-1 flex-shrink-0" size={18} />
                 <span className="text-gray-200">{store.phone}</span>
+              </div>
+              <div className="flex items-start gap-3">
+                <Icon name="Clock" className="text-yellow-600 mt-1 flex-shrink-0" size={18} />
+                <span className="text-gray-200">{store.hours}</span>
               </div>
               <div className="mt-4 p-3 bg-gray-900 rounded border border-yellow-900/50">
                 <span className="text-xs text-yellow-600 uppercase tracking-widest block mb-1">Target Mission</span>
@@ -255,41 +275,118 @@
       </div>
     );
 
-    const ExpensesTab = ({ expenses, handleAddExpense, handleDeleteExpense }) => {
+    const ExpensesTab = ({ expenses, handleAddExpense, handleDeleteExpense, handleUpdateExpense }) => {
+      const [editingId, setEditingId] = useState(null); // 控制是否在編輯模式
       const [newItem, setNewItem] = useState("");
       const [newAmount, setNewAmount] = useState("");
       const [payer, setPayer] = useState(PARTICIPANTS[0]);
-      const [splitType, setSplitType] = useState('all');
+      const [splitType, setSplitType] = useState('all'); 
       const [splitAmong, setSplitAmong] = useState([...PARTICIPANTS]);
+      const [exactAmounts, setExactAmounts] = useState({});
       const [showSettlement, setShowSettlement] = useState(false);
 
       const toggleParticipant = (name) => {
         setSplitAmong(prev => prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]);
       };
 
+      const handleExactChange = (name, val) => {
+        const num = parseInt(val, 10) || 0;
+        setExactAmounts(prev => ({ ...prev, [name]: num }));
+      };
+
+      // 點擊編輯按鈕：把資料帶入表單
+      const handleEditClick = (exp) => {
+        setEditingId(exp.id);
+        setNewItem(exp.name);
+        setNewAmount(exp.amount.toString());
+        setPayer(exp.payer || PARTICIPANTS[0]);
+        setSplitType(exp.splitType || 'all');
+        setSplitAmong(exp.splitAmong || [...PARTICIPANTS]);
+        setExactAmounts(exp.exactAmounts || {});
+        // 滾動到最上方
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      };
+
+      // 取消編輯
+      const cancelEdit = () => {
+        setEditingId(null);
+        setNewItem(""); setNewAmount(""); setSplitType('all'); 
+        setSplitAmong([...PARTICIPANTS]); setExactAmounts({});
+      };
+
       const onSubmit = (e) => {
         e.preventDefault();
         const amountNum = parseInt(newAmount, 10);
         if (!newItem.trim() || isNaN(amountNum) || amountNum <= 0) return;
-        if (splitType === 'custom' && splitAmong.length === 0) return;
-        const finalSplit = splitType === 'all' ? [...PARTICIPANTS] : splitAmong;
         
-        handleAddExpense({ name: newItem, amount: amountNum, payer: payer, splitAmong: finalSplit });
+        let finalExpense = {
+          name: newItem,
+          amount: amountNum,
+          payer: payer,
+          splitType: splitType
+        };
+
+        if (splitType === 'custom_even' && splitAmong.length === 0) {
+          alert("請至少選擇一位分攤者！");
+          return;
+        }
+
+        if (splitType === 'exact') {
+          const sum = Object.values(exactAmounts).reduce((a, b) => a + b, 0);
+          if (sum !== amountNum) {
+            alert(`自訂金額加總 (${sum}) 與總金額 (${amountNum}) 不符！\n請調整後再儲存。`);
+            return;
+          }
+          const filteredExact = {};
+          for (const [key, val] of Object.entries(exactAmounts)) {
+            if (val > 0) filteredExact[key] = val;
+          }
+          if (Object.keys(filteredExact).length === 0) {
+            alert("請至少設定一位分攤者的金額！");
+            return;
+          }
+          finalExpense.exactAmounts = filteredExact;
+        } else if (splitType === 'all' || splitType === 'custom_even') {
+          finalExpense.splitAmong = splitType === 'all' ? [...PARTICIPANTS] : splitAmong;
+        }
+
+        // 判斷是新增還是修改
+        if (editingId) {
+          handleUpdateExpense(editingId, finalExpense);
+        } else {
+          handleAddExpense(finalExpense);
+        }
         
-        setNewItem(""); setNewAmount(""); setSplitType('all'); setSplitAmong([...PARTICIPANTS]);
+        // 清空表單
+        cancelEdit();
       };
 
       const balances = {};
       PARTICIPANTS.forEach(p => balances[p] = 0);
       expenses.forEach(exp => {
         const expPayer = exp.payer || PARTICIPANTS[0];
-        const expSplitAmong = exp.splitAmong || [...PARTICIPANTS];
-        if (balances[expPayer] !== undefined) balances[expPayer] += exp.amount;
-        if (expSplitAmong.length > 0) {
-          const splitAmount = exp.amount / expSplitAmong.length;
-          expSplitAmong.forEach(p => { if (balances[p] !== undefined) balances[p] -= splitAmount; });
+        const type = exp.splitType || (exp.splitAmong && exp.splitAmong.length < PARTICIPANTS.length ? 'custom_even' : 'all');
+        
+        if (type !== 'none') {
+          if (balances[expPayer] !== undefined) balances[expPayer] += exp.amount;
+        }
+
+        if (type === 'all' || type === 'custom_even') {
+          const expSplitAmong = exp.splitAmong || [...PARTICIPANTS];
+          if (expSplitAmong.length > 0) {
+            const splitAmount = exp.amount / expSplitAmong.length;
+            expSplitAmong.forEach(p => { 
+              if (balances[p] !== undefined) balances[p] -= splitAmount; 
+            });
+          }
+        } else if (type === 'exact' && exp.exactAmounts) {
+          Object.entries(exp.exactAmounts).forEach(([p, amt]) => {
+            if (balances[p] !== undefined) balances[p] -= amt;
+          });
         }
       });
+
+      const exactSum = Object.values(exactAmounts).reduce((a, b) => a + b, 0);
 
       return (
         <div className="p-4 flex flex-col h-full">
@@ -328,8 +425,16 @@
             </div>
           )}
 
-          <form onSubmit={onSubmit} className="bg-gray-800 p-4 rounded-xl border border-gray-700 mb-6 shadow-lg">
-            <h3 className="text-sm text-yellow-600 uppercase tracking-widest mb-3 font-bold">新增帳單</h3>
+          <form onSubmit={onSubmit} className={`p-4 rounded-xl border mb-6 shadow-lg transition-colors ${editingId ? 'bg-yellow-900/20 border-yellow-500' : 'bg-gray-800 border-gray-700'}`}>
+            <div className="flex justify-between items-center mb-3">
+              <h3 className={`text-sm tracking-widest font-bold uppercase ${editingId ? 'text-yellow-400' : 'text-yellow-600'}`}>
+                {editingId ? '修改帳單' : '新增帳單'}
+              </h3>
+              {editingId && (
+                <button type="button" onClick={cancelEdit} className="text-xs text-gray-400 underline">取消編輯</button>
+              )}
+            </div>
+            
             <div className="space-y-3">
               <div className="flex gap-2">
                 <input type="text" placeholder="項目 (例: 租車)" className="flex-1 bg-gray-900 border border-gray-600 text-white p-2 rounded-lg focus:outline-none focus:border-yellow-500" value={newItem} onChange={(e) => setNewItem(e.target.value)} />
@@ -342,17 +447,26 @@
                 </select>
               </div>
               <div className="pt-2 border-t border-gray-700">
-                <div className="flex gap-4 mb-3">
-                  <label className="flex items-center gap-2 cursor-pointer">
+                <div className="flex flex-wrap gap-x-4 gap-y-2 mb-3">
+                  <label className="flex items-center gap-1.5 cursor-pointer">
                     <input type="radio" name="splitType" checked={splitType === 'all'} onChange={() => setSplitType('all')} className="accent-yellow-500 w-4 h-4" />
                     <span className="text-sm text-gray-300">全員均分</span>
                   </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="radio" name="splitType" checked={splitType === 'custom'} onChange={() => setSplitType('custom')} className="accent-yellow-500 w-4 h-4" />
-                    <span className="text-sm text-gray-300">自訂分攤</span>
+                  <label className="flex items-center gap-1.5 cursor-pointer">
+                    <input type="radio" name="splitType" checked={splitType === 'custom_even'} onChange={() => setSplitType('custom_even')} className="accent-yellow-500 w-4 h-4" />
+                    <span className="text-sm text-gray-300">勾選均分</span>
+                  </label>
+                  <label className="flex items-center gap-1.5 cursor-pointer">
+                    <input type="radio" name="splitType" checked={splitType === 'exact'} onChange={() => setSplitType('exact')} className="accent-yellow-500 w-4 h-4" />
+                    <span className="text-sm text-gray-300">自訂金額</span>
+                  </label>
+                  <label className="flex items-center gap-1.5 cursor-pointer">
+                    <input type="radio" name="splitType" checked={splitType === 'none'} onChange={() => setSplitType('none')} className="accent-yellow-500 w-4 h-4" />
+                    <span className="text-sm text-gray-300">僅記帳(不結算)</span>
                   </label>
                 </div>
-                {splitType === 'custom' && (
+                
+                {splitType === 'custom_even' && (
                   <div className="grid grid-cols-3 gap-2 mt-2 bg-gray-900 p-3 rounded-lg border border-gray-700">
                     {PARTICIPANTS.map(p => (
                       <label key={p} className="flex items-center gap-2 cursor-pointer">
@@ -362,9 +476,29 @@
                     ))}
                   </div>
                 )}
+
+                {splitType === 'exact' && (
+                  <div className="mt-2 bg-gray-900 p-3 rounded-lg border border-gray-700">
+                    <div className="flex justify-between items-center mb-3 border-b border-gray-700 pb-2">
+                      <span className="text-sm text-gray-300">請輸入每人分攤金額：</span>
+                      <span className={`text-sm font-bold ${exactSum === parseInt(newAmount||0) ? 'text-green-400' : 'text-red-400'}`}>
+                        目前加總: {exactSum} / {newAmount || 0}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {PARTICIPANTS.map(p => (
+                        <div key={p} className="flex items-center gap-2 bg-gray-800 p-1.5 rounded">
+                          <span className="text-sm text-gray-300 w-10 shrink-0">{p}</span>
+                          <input type="number" placeholder="0" className="flex-1 bg-gray-950 border border-gray-600 text-white p-1 rounded text-sm focus:outline-none focus:border-yellow-500 text-right w-full" value={exactAmounts[p] || ''} onChange={(e) => handleExactChange(p, e.target.value)} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
-              <button type="submit" className="w-full bg-yellow-600 hover:bg-yellow-500 text-black p-3 rounded-lg flex items-center justify-center gap-2 font-black mt-2">
-                <Icon name="Plus" size={18} /> 加入雲端帳單
+              <button type="submit" className={`w-full text-black p-3 rounded-lg flex items-center justify-center gap-2 font-black mt-2 ${editingId ? 'bg-yellow-500 hover:bg-yellow-400' : 'bg-yellow-600 hover:bg-yellow-500'}`}>
+                {editingId ? <Icon name="Check" size={18} /> : <Icon name="Plus" size={18} />}
+                {editingId ? '儲存修改' : '加入雲端帳單'}
               </button>
             </div>
           </form>
@@ -374,16 +508,20 @@
               <p className="text-center text-gray-500 py-8 bg-gray-800/30 rounded-xl border border-gray-800 border-dashed">尚無帳單紀錄</p>
             ) : (
               expenses.map((item, index) => {
-                const expSplitAmong = item.splitAmong || [...PARTICIPANTS];
+                const type = item.splitType || (item.splitAmong && item.splitAmong.length < PARTICIPANTS.length ? 'custom_even' : 'all');
                 const expPayer = item.payer || PARTICIPANTS[0];
-                const perPerson = expSplitAmong.length > 0 ? Math.round(item.amount / expSplitAmong.length) : 0;
                 
                 return (
                   <div key={item.id} className="bg-gray-800/80 rounded-xl border border-gray-700 p-4 relative">
-                    <button onClick={() => handleDeleteExpense(item.id)} className="absolute top-4 right-4 text-gray-600 hover:text-red-400 bg-gray-900 p-1.5 rounded-md">
-                      <Icon name="Trash2" size={16} />
-                    </button>
-                    <div className="pr-10">
+                    <div className="absolute top-4 right-4 flex gap-1">
+                      <button onClick={() => handleEditClick(item)} className="text-gray-500 hover:text-yellow-400 bg-gray-900 p-1.5 rounded-md transition-colors">
+                        <Icon name="Edit2" size={16} />
+                      </button>
+                      <button onClick={() => handleDeleteExpense(item.id)} className="text-gray-500 hover:text-red-400 bg-gray-900 p-1.5 rounded-md transition-colors">
+                        <Icon name="Trash2" size={16} />
+                      </button>
+                    </div>
+                    <div className="pr-16">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-[10px] bg-yellow-600/20 text-yellow-500 px-1.5 py-0.5 rounded font-mono">#{index + 1}</span>
                         <h4 className="text-lg font-bold text-gray-100">{item.name}</h4>
@@ -400,12 +538,21 @@
                       <div className="flex items-start text-gray-300 bg-gray-900/50 p-1.5 rounded">
                         <span className="text-gray-500 w-12 text-xs mt-0.5">需分攤</span>
                         <div className="flex-1">
-                          <div className="text-yellow-600 font-mono text-xs mb-1">( 每人 NT$ {perPerson} )</div>
-                          <div className="text-xs leading-relaxed">
-                            {expSplitAmong.length === PARTICIPANTS.length ? (
-                              <span className="text-blue-300 border border-blue-800 bg-blue-900/30 px-1.5 py-0.5 rounded">全員均分</span>
-                            ) : (
-                              <span className="text-gray-400">{expSplitAmong.join('、')}</span>
+                          {(type === 'all' || type === 'custom_even') && (
+                            <div className="text-yellow-600 font-mono text-xs mb-1">
+                              ( 每人約 NT$ {item.splitAmong?.length > 0 ? Math.round(item.amount / item.splitAmong.length) : 0} )
+                            </div>
+                          )}
+                          <div className="text-xs leading-relaxed mt-1">
+                            {type === 'none' && <span className="text-gray-400 bg-gray-800 px-1.5 py-0.5 rounded border border-gray-700">僅記帳，不列入結算</span>}
+                            {type === 'all' && <span className="text-blue-300 border border-blue-800 bg-blue-900/30 px-1.5 py-0.5 rounded">全員均分</span>}
+                            {type === 'custom_even' && <span className="text-gray-400">分攤者: {(item.splitAmong || []).join('、')}</span>}
+                            {type === 'exact' && item.exactAmounts && (
+                              <div className="flex flex-wrap gap-1">
+                                {Object.entries(item.exactAmounts).map(([p, amt]) => (
+                                  <span key={p} className="text-gray-300 bg-gray-800 px-1.5 py-0.5 rounded border border-gray-700">{p} ${amt}</span>
+                                ))}
+                              </div>
                             )}
                           </div>
                         </div>
@@ -429,44 +576,43 @@
       useEffect(() => {
         const setupFirebase = async () => {
           if (!window.fs) {
-            setSyncStatus('🔴 無法連線');
+            setSyncStatus('🔴 找不到 Firebase 模組');
             return;
           }
 
           const { collection, onSnapshot, doc } = window.fs;
           
           try {
-            // 1. 同步「備註」資料
             const notesDocRef = doc(window.db, "taichung_trip", "notes_data");
             onSnapshot(notesDocRef, (docSnap) => {
               if (docSnap.exists()) {
                 setNotes(docSnap.data());
               }
+            }, (error) => {
+              console.error(error);
+              setSyncStatus('🔴 權限被拒絕 (請檢查規則)');
             });
 
-            // 2. 同步「軍費」資料
             const expensesColRef = collection(window.db, "taichung_trip_expenses");
             onSnapshot(expensesColRef, (snapshot) => {
               const exps = [];
               snapshot.forEach((docSnap) => {
                 exps.push({ id: docSnap.id, ...docSnap.data() });
               });
-              // 按照建立時間排序
               exps.sort((a, b) => a.createdAt - b.createdAt);
               setExpenses(exps);
               setSyncStatus('🟢 雲端同步中');
             }, (error) => {
               console.error(error);
-              setSyncStatus('🔴 連線失敗');
+              setSyncStatus(`🔴 錯誤: ${error.code}`);
             });
 
           } catch (error) {
             console.error("Firebase 連線錯誤:", error);
-            setSyncStatus('🔴 連線失敗');
+            setSyncStatus('🔴 系統連線異常');
           }
         };
 
-        // 監聽 Firebase 載入完成事件
         if (window.fs) {
           setupFirebase();
         } else {
@@ -476,11 +622,10 @@
         return () => window.removeEventListener('firebaseReady', setupFirebase);
       }, []);
 
-      // 儲存備註到雲端
       const handleSaveNote = async (id, text) => {
         const { doc, setDoc } = window.fs;
         const newNotes = { ...notes, [id]: text };
-        setNotes(newNotes); // 先更新畫面
+        setNotes(newNotes); 
         try {
           await setDoc(doc(window.db, "taichung_trip", "notes_data"), newNotes, { merge: true });
         } catch (e) {
@@ -488,10 +633,9 @@
         }
       };
 
-      // 新增軍費到雲端
       const handleAddExpense = async (expenseData) => {
         const { doc, setDoc } = window.fs;
-        const expenseId = Date.now().toString(); // 用時間戳當 ID
+        const expenseId = Date.now().toString();
         const newExpense = {
           ...expenseData,
           createdAt: Date.now()
@@ -503,7 +647,15 @@
         }
       };
 
-      // 刪除雲端軍費
+      const handleUpdateExpense = async (id, updatedData) => {
+        const { doc, updateDoc } = window.fs;
+        try {
+          await updateDoc(doc(window.db, "taichung_trip_expenses", id), updatedData);
+        } catch (e) {
+          alert("修改失敗，請檢查網路連線");
+        }
+      };
+
       const handleDeleteExpense = async (id) => {
         if(!confirm("確定要刪除這筆帳單嗎？")) return;
         const { doc, deleteDoc } = window.fs;
@@ -528,7 +680,7 @@
           <main className="max-w-md mx-auto w-full">
             {activeTab === 'itinerary' && <ItineraryTab notes={notes} handleSaveNote={handleSaveNote} />}
             {activeTab === 'stores' && <StoresTab />}
-            {activeTab === 'expenses' && <ExpensesTab expenses={expenses} handleAddExpense={handleAddExpense} handleDeleteExpense={handleDeleteExpense} />}
+            {activeTab === 'expenses' && <ExpensesTab expenses={expenses} handleAddExpense={handleAddExpense} handleDeleteExpense={handleDeleteExpense} handleUpdateExpense={handleUpdateExpense} />}
           </main>
 
           <nav className="fixed bottom-0 left-0 right-0 bg-black border-t border-gray-800 z-30 pb-safe">
