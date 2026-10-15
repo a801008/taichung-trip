@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>謎霧行動：台中48小時</title>
+  
+  <!-- 載入 Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- 載入 React 與 ReactDOM -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  
+  <!-- 載入 Babel (讓瀏覽器可以直接看懂 React 語法) -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    body { background-color: #0a0a0a; color: #e5e7eb; font-family: sans-serif; -webkit-tap-highlight-color: transparent;}
+    .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+    /* 隱藏滾動條但保留滾動功能 */
+    ::-webkit-scrollbar { width: 0px; background: transparent; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- React 程式碼開始 -->
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // --- 圖示元件 (內建 SVG，不需額外安裝套件) ---
+    const Icon = ({ name, size = 24, className = "" }) => {
+      const iconPaths = {
+        MapIcon: <><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon><line x1="9" y1="3" x2="9" y2="18"></line><line x1="15" y1="6" x2="15" y2="21"></line></>,
+        Search: <><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></>,
+        CircleDollarSign: <><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></>,
+        ChevronDown: <><path d="m6 9 6 6 6-6"/></>,
+        ChevronUp: <><path d="m18 15-6-6-6 6"/></>,
+        Plus: <><path d="M5 12h14"/><path d="M12 5v14"/></>,
+        Trash2: <><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></>,
+        Edit2: <><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></>,
+        Check: <><path d="M20 6 9 17l-5-5"/></>,
+        Clock: <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>,
+        MapPin: <><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></>,
+        Navigation: <><polygon points="3 11 22 2 13 21 11 13 3 11"/></>,
+        Car: <><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></>
+      };
+
+      return (
+        <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+          {iconPaths[name]}
+        </svg>
+      );
+    };
+
+    // --- 資料庫 ---
+    const itineraryData = [
+      {
+        day: "Day 1 (10/24) - 初入謎城",
+        items: [
+          { id: "d1-1", time: "07:30", type: "location", title: "高雄 R3 小港站3號出口", desc: "集合出發！ (譚董車 0978250530)", address: "高雄市小港區二苓里沿海一路280號" },
+          { id: "d1-t1", time: "", type: "transit", title: "車程預估", desc: "約 2.5 - 3 小時" },
+          { id: "d1-2", time: "10:30", type: "location", title: "肉蛋中西式早餐店", desc: "早午餐補充能量", address: "臺中市北區健行路748號" },
+          { id: "d1-t2", time: "", type: "transit", title: "車程預估", desc: "約 5 分鐘" },
+          { id: "d1-3", time: "13:00~15:30", type: "location", title: "哇沙謎江戶時代館", desc: "【時光列車】全員7位", address: "臺中市北區梅川里永興街370號B1之4" },
+          { id: "d1-t3", time: "", type: "transit", title: "車程預估", desc: "約 10 分鐘" },
+          { id: "d1-4", time: "15:30", type: "location", title: "天利食堂台中青島店", desc: "下午茶補給", address: "臺中市北屯區平德里青島路三段143號" },
+          { id: "d1-t4", time: "", type: "transit", title: "分支車程", desc: "兵分兩路" },
+          { id: "d1-5", time: "17:00", type: "location", title: "Loop迴圈(頭七) / 哇沙謎(冒險王)", desc: "Loop: 小開、榮森 | 哇沙謎: 另外5人", address: "臺中市北屯區文心路四段188號" },
+          { id: "d1-t5", time: "", type: "transit", title: "車程預估", desc: "約 30 分鐘" },
+          { id: "d1-6", time: "19:30", type: "location", title: "東海牛棚背包客棧", desc: "存檔點 (住宿休息)", address: "臺中市龍井區新東里台灣大道五段3巷42弄22號" },
+        ]
+      },
+      {
+        day: "Day 2 (10/25) - 深入謎團",
+        items: [
+          { id: "d2-1", time: "早上", type: "location", title: "東海牛棚背包客棧", desc: "退房載入存檔", address: "臺中市龍井區新東里台灣大道五段3巷42弄22號" },
+          { id: "d2-t1", time: "", type: "transit", title: "車程預估", desc: "約 20 分鐘" },
+          { id: "d2-2", time: "11:00", type: "location", title: "木需奶奶Brunch", desc: "戰前補給", address: "臺中市西屯區何南里臺灣大道二段753號" },
+          { id: "d2-t2", time: "", type: "transit", title: "車程預估", desc: "約 10 分鐘" },
+          { id: "d2-3", time: "12:00~14:00", type: "location", title: "Escer異世客 華美店", desc: "【暗影潛行】全員8位", address: "臺中市西屯區何福里寧漢二街7號" },
+          { id: "d2-t3", time: "", type: "transit", title: "車程預估", desc: "約 15 分鐘" },
+          { id: "d2-4", time: "15:00~17:00", type: "location", title: "笨蛋工作室 美村館", desc: "【平安戲院】全員7位", address: "臺中市西區忠明里美村路一段36號B1" },
+          { id: "d2-t4", time: "", type: "transit", title: "車程預估", desc: "約 40 分鐘" },
+          { id: "d2-5", time: "18:00", type: "location", title: "臻記腸粉湯品", desc: "最終補給", address: "臺中市豐原區中陽里圓環東路475號" },
+          { id: "d2-t5", time: "", type: "transit", title: "車程預估", desc: "約 5 分鐘" },
+          { id: "d2-6", time: "19:00~21:00", type: "location", title: "哇沙謎創意工作室二館", desc: "【秘令2】全員7位", address: "臺中市豐原區中陽里自強街77號" },
+          { id: "d2-t6", time: "", type: "transit", title: "車程預估", desc: "約 2.5 - 3 小時" },
+          { id: "d2-7", time: "21:30", type: "location", title: "撤離回高雄", desc: "預計凌晨1點抵達小港站", address: "高雄市小港區二苓里沿海一路280號" },
+        ]
+      }
+    ];
+
+    const storesData = [
+      { id: 1, name: "哇沙謎江戶時代館", address: "臺中市北區梅川里永興街370號B1之4", phone: "0909-317-006", games: "時光列車、冒險王" },
+      { id: 2, name: "Loop迴圈密室逃脫旗艦店", address: "臺中市北屯區文心路四段188號", phone: "04-2238-6610", games: "頭七" },
+      { id: 3, name: "Escer異世客 華美店", address: "臺中市西屯區何福里寧漢二街7號", phone: "04-2313-0819", games: "暗影潛行" },
+      { id: 4, name: "笨蛋工作室 美村旗艦館", address: "臺中市西區忠明里美村路一段36號B1", phone: "04-2322-0611", games: "平安戲院" },
+      { id: 5, name: "哇沙謎創意工作室二館", address: "臺中市豐原區中陽里自強街77號", phone: "0988-129-373", games: "秘令2" },
+    ];
+
+    const PARTICIPANTS = ['小開', '雨婷', '柚子', '魚魚', '小若', 'NICK', '阿姚', '榮森', '賀密'];
+
+    // --- 頁籤一：行動路徑元件 ---
+    const ItineraryTab = ({ notes, setNotes }) => {
+      const [editingId, setEditingId] = useState(null);
+      const [tempNote, setTempNote] = useState("");
+
+      const handleEdit = (id, currentNote) => {
+        setEditingId(id);
+        setTempNote(currentNote || "");
+      };
+
+      const handleSave = (id) => {
+        setNotes(prev => ({ ...prev, [id]: tempNote }));
+        setEditingId(null);
+      };
+
+      return (
+        <div className="p-4">
+          <h2 className="text-2xl font-bold text-yellow-500 mb-6 flex items-center gap-2 border-b border-yellow-700 pb-2">
+            <Icon name="MapIcon" className="text-yellow-400" /> 行動路徑
+          </h2>
+          
+          {itineraryData.map((dayData, dayIdx) => (
+            <div key={dayIdx} className="mb-8">
+              <h3 className="text-xl font-bold text-gray-200 mb-4 bg-gray-900 p-2 rounded border-l-4 border-yellow-500">
+                {dayData.day}
+              </h3>
+              <div className="relative border-l-2 border-yellow-700/50 ml-4 pl-6 space-y-6">
+                {dayData.items.map((item, index) => {
+                  let navUrl = "";
+                  if (item.type === 'location' && item.address) {
+                    const prevLocations = dayData.items.slice(0, index).filter(i => i.type === 'location' && i.address);
+                    const prevLocation = prevLocations.length > 0 ? prevLocations[prevLocations.length - 1] : null;
+                    if (prevLocation) {
+                      navUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(prevLocation.address)}&destination=${encodeURIComponent(item.address)}`;
+                    } else {
+                      navUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.address)}`;
+                    }
+                  }
+
+                  return (
+                    <div key={item.id} className="relative">
+                      {item.type === 'location' ? (
+                        <div className="absolute -left-[35px] bg-gray-900 border-2 border-yellow-500 rounded-full p-1 shadow-[0_0_10px_rgba(234,179,8,0.5)]">
+                          <Icon name="MapPin" size={16} className="text-yellow-400" />
+                        </div>
+                      ) : (
+                        <div className="absolute -left-[31px] bg-gray-800 border-2 border-gray-600 rounded-full p-1 mt-1">
+                          <Icon name="Car" size={12} className="text-gray-400" />
+                        </div>
+                      )}
+
+                      <div className={`p-3 rounded-lg ${item.type === 'location' ? 'bg-gray-800/80 border border-gray-700' : 'bg-transparent text-gray-400'}`}>
+                        {item.time && <span className="text-yellow-600 text-sm font-mono font-bold">{item.time}</span>}
+                        <div className="flex justify-between items-start mt-1">
+                          <div>
+                            <h4 className={`font-bold ${item.type === 'location' ? 'text-yellow-100 text-lg' : 'text-gray-400 text-sm'}`}>{item.title}</h4>
+                            <p className="text-gray-300 text-sm mt-1">{item.desc}</p>
+                          </div>
+                          {item.type === 'location' && navUrl && (
+                            <a href={navUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 bg-yellow-600/20 hover:bg-yellow-600/40 text-yellow-500 border border-yellow-600/50 px-2 py-1 rounded text-xs font-bold transition-colors shrink-0 ml-2">
+                              <Icon name="Navigation" size={14} /> 導航
+                            </a>
+                          )}
+                        </div>
+                        
+                        {item.type === 'location' && (
+                          <div className="mt-3 pt-3 border-t border-gray-700">
+                            {editingId === item.id ? (
+                              <div className="flex gap-2">
+                                <input type="text" className="flex-1 bg-gray-950 border border-yellow-700 text-white p-2 rounded text-sm focus:outline-none focus:border-yellow-400" placeholder="輸入備註事項..." value={tempNote} onChange={(e) => setTempNote(e.target.value)} />
+                                <button onClick={() => handleSave(item.id)} className="bg-yellow-600 hover:bg-yellow-500 text-black p-2 rounded transition-colors">
+                                  <Icon name="Check" size={16} />
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="flex justify-between items-start gap-2 group">
+                                <p className="text-sm text-gray-400 italic flex-1">{notes[item.id] ? `備註: ${notes[item.id]}` : '新增備註...'}</p>
+                                <button onClick={() => handleEdit(item.id, notes[item.id])} className="text-gray-500 hover:text-yellow-400 p-1">
+                                  <Icon name="Edit2" size={14} />
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    };
+
+    // --- 頁籤二：情報局元件 ---
+    const StoreCard = ({ store }) => {
+      const [expanded, setExpanded] = useState(false);
+      return (
+        <div className="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden mb-4 transition-all duration-300 shadow-lg hover:border-yellow-600/50" onClick={() => setExpanded(!expanded)}>
+          <div className="p-4 flex justify-between items-center cursor-pointer bg-gradient-to-r from-gray-800 to-gray-900">
+            <h3 className="font-bold text-yellow-500 text-lg">{store.name}</h3>
+            {expanded ? <Icon name="ChevronUp" className="text-yellow-600" /> : <Icon name="ChevronDown" className="text-gray-500" />}
+          </div>
+          {expanded && (
+            <div className="p-4 border-t border-gray-700 bg-gray-800/50 space-y-3">
+              <div className="flex items-start gap-3">
+                <Icon name="MapPin" className="text-yellow-600 mt-1 flex-shrink-0" size={18} />
+                <span className="text-gray-200">{store.address}</span>
+              </div>
+              <div className="flex items-start gap-3">
+                <Icon name="Clock" className="text-yellow-600 mt-1 flex-shrink-0" size={18} />
+                <span className="text-gray-200">{store.phone}</span>
+              </div>
+              <div className="mt-4 p-3 bg-gray-900 rounded border border-yellow-900/50">
+                <span className="text-xs text-yellow-600 uppercase tracking-widest block mb-1">Target Mission</span>
+                <span className="font-bold text-yellow-100">{store.games}</span>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    const StoresTab = () => (
+      <div className="p-4">
+        <h2 className="text-2xl font-bold text-yellow-500 mb-6 flex items-center gap-2 border-b border-yellow-700 pb-2">
+          <Icon name="Search" className="text-yellow-400" /> 情報局店家
+        </h2>
+        <div className="space-y-4">
+          {storesData.map(store => <StoreCard key={store.id} store={store} />)}
+        </div>
+      </div>
+    );
+
+    // --- 頁籤三：軍費管理元件 ---
+    const ExpensesTab = ({ expenses, setExpenses }) => {
+      const [newItem, setNewItem] = useState("");
+      const [newAmount, setNewAmount] = useState("");
+      const [payer, setPayer] = useState(PARTICIPANTS[0]);
+      const [splitType, setSplitType] = useState('all');
+      const [splitAmong, setSplitAmong] = useState([...PARTICIPANTS]);
+      const [showSettlement, setShowSettlement] = useState(false);
+
+      const toggleParticipant = (name) => {
+        setSplitAmong(prev => prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]);
+      };
+
+      const handleAdd = (e) => {
+        e.preventDefault();
+        const amountNum = parseInt(newAmount, 10);
+        if (!newItem.trim() || isNaN(amountNum) || amountNum <= 0) return;
+        if (splitType === 'custom' && splitAmong.length === 0) return;
+        const finalSplit = splitType === 'all' ? [...PARTICIPANTS] : splitAmong;
+        const expense = { id: Date.now().toString(), name: newItem, amount: amountNum, payer: payer, splitAmong: finalSplit };
+        setExpenses(prev => [...prev, expense]);
+        setNewItem(""); setNewAmount(""); setSplitType('all'); setSplitAmong([...PARTICIPANTS]);
+      };
+
+      const handleDelete = (id) => {
+        setExpenses(prev => prev.filter(exp => exp.id !== id));
+      };
+
+      const balances = {};
+      PARTICIPANTS.forEach(p => balances[p] = 0);
+      expenses.forEach(exp => {
+        const expPayer = exp.payer || PARTICIPANTS[0];
+        const expSplitAmong = exp.splitAmong || [...PARTICIPANTS];
+        if (balances[expPayer] !== undefined) balances[expPayer] += exp.amount;
+        if (expSplitAmong.length > 0) {
+          const splitAmount = exp.amount / expSplitAmong.length;
+          expSplitAmong.forEach(p => { if (balances[p] !== undefined) balances[p] -= splitAmount; });
+        }
+      });
+
+      return (
+        <div className="p-4 flex flex-col h-full">
+          <div className="flex justify-between items-end border-b border-yellow-700 pb-2 mb-6">
+            <h2 className="text-2xl font-bold text-yellow-500 flex items-center gap-2">
+              <Icon name="CircleDollarSign" className="text-yellow-400" /> 軍費管理
+            </h2>
+            <button onClick={() => setShowSettlement(!showSettlement)} className="text-sm bg-yellow-600/20 text-yellow-400 border border-yellow-600 px-3 py-1 rounded hover:bg-yellow-600/40">
+              {showSettlement ? "隱藏結算" : "查看結算表"}
+            </button>
+          </div>
+
+          {showSettlement && (
+            <div className="bg-gray-900 border border-yellow-600 p-4 rounded-xl mb-6 shadow-[0_0_15px_rgba(234,179,8,0.2)]">
+              <h3 className="text-lg font-bold text-yellow-500 mb-3 border-b border-gray-700 pb-2 flex justify-between">
+                <span>個人結算狀態</span>
+                <span className="text-xs text-gray-400 font-normal self-end mb-1">正數為應收 / 負數為應付</span>
+              </h3>
+              <div className="grid grid-cols-2 gap-3">
+                {PARTICIPANTS.map(p => {
+                  const balance = balances[p];
+                  return (
+                    <div key={p} className="flex justify-between items-center bg-gray-800 p-2 rounded border border-gray-700">
+                      <span className="text-gray-300 font-medium">{p}</span>
+                      {balance > 0.01 ? (
+                        <span className="text-green-400 font-mono text-sm font-bold">+${Math.round(balance)}</span>
+                      ) : balance < -0.01 ? (
+                        <span className="text-red-400 font-mono text-sm font-bold">-${Math.abs(Math.round(balance))}</span>
+                      ) : (
+                        <span className="text-gray-500 text-sm">結清</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          <form onSubmit={handleAdd} className="bg-gray-800 p-4 rounded-xl border border-gray-700 mb-6 shadow-lg">
+            <h3 className="text-sm text-yellow-600 uppercase tracking-widest mb-3 font-bold">新增帳單</h3>
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                <input type="text" placeholder="項目 (例: 租車)" className="flex-1 bg-gray-900 border border-gray-600 text-white p-2 rounded-lg focus:outline-none focus:border-yellow-500" value={newItem} onChange={(e) => setNewItem(e.target.value)} />
+                <input type="number" placeholder="總額" className="w-24 bg-gray-900 border border-gray-600 text-white p-2 rounded-lg focus:outline-none focus:border-yellow-500" value={newAmount} onChange={(e) => setNewAmount(e.target.value)} />
+              </div>
+              <div className="flex items-center gap-2 bg-gray-900/50 p-2 rounded border border-gray-700">
+                <span className="text-gray-400 text-sm whitespace-nowrap pl-1">代墊人:</span>
+                <select className="flex-1 bg-transparent text-yellow-400 font-bold p-1 focus:outline-none" value={payer} onChange={(e) => setPayer(e.target.value)}>
+                  {PARTICIPANTS.map(p => <option key={p} value={p} className="bg-gray-900 text-white">{p}</option>)}
+                </select>
+              </div>
+              <div className="pt-2 border-t border-gray-700">
+                <div className="flex gap-4 mb-3">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" name="splitType" checked={splitType === 'all'} onChange={() => setSplitType('all')} className="accent-yellow-500 w-4 h-4" />
+                    <span className="text-sm text-gray-300">全員均分</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" name="splitType" checked={splitType === 'custom'} onChange={() => setSplitType('custom')} className="accent-yellow-500 w-4 h-4" />
+                    <span className="text-sm text-gray-300">自訂分攤</span>
+                  </label>
+                </div>
+                {splitType === 'custom' && (
+                  <div className="grid grid-cols-3 gap-2 mt-2 bg-gray-900 p-3 rounded-lg border border-gray-700">
+                    {PARTICIPANTS.map(p => (
+                      <label key={p} className="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" checked={splitAmong.includes(p)} onChange={() => toggleParticipant(p)} className="accent-yellow-500 w-4 h-4 rounded" />
+                        <span className={`text-sm ${splitAmong.includes(p) ? 'text-yellow-400 font-bold' : 'text-gray-400'}`}>{p}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <button type="submit" className="w-full bg-yellow-600 hover:bg-yellow-500 text-black p-3 rounded-lg flex items-center justify-center gap-2 font-black mt-2">
+                <Icon name="Plus" size={18} /> 加入帳單
+              </button>
+            </div>
+          </form>
+
+          <div className="flex-1 overflow-y-auto space-y-4 pb-24">
+            {expenses.length === 0 ? (
+              <p className="text-center text-gray-500 py-8 bg-gray-800/30 rounded-xl border border-gray-800 border-dashed">尚無帳單紀錄</p>
+            ) : (
+              expenses.map((item, index) => {
+                const expSplitAmong = item.splitAmong || [...PARTICIPANTS];
+                const expPayer = item.payer || PARTICIPANTS[0];
+                const perPerson = expSplitAmong.length > 0 ? Math.round(item.amount / expSplitAmong.length) : 0;
+                
+                return (
+                  <div key={item.id} className="bg-gray-800/80 rounded-xl border border-gray-700 p-4 relative">
+                    <button onClick={() => handleDelete(item.id)} className="absolute top-4 right-4 text-gray-600 hover:text-red-400 bg-gray-900 p-1.5 rounded-md">
+                      <Icon name="Trash2" size={16} />
+                    </button>
+                    <div className="pr-10">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[10px] bg-yellow-600/20 text-yellow-500 px-1.5 py-0.5 rounded font-mono">#{index + 1}</span>
+                        <h4 className="text-lg font-bold text-gray-100">{item.name}</h4>
+                      </div>
+                      <div className="text-2xl font-black text-yellow-500 font-mono tracking-wider mb-3">
+                        NT$ {item.amount.toLocaleString()}
+                      </div>
+                    </div>
+                    <div className="mt-2 pt-3 border-t border-gray-700/50 text-sm space-y-2">
+                      <div className="flex items-center text-gray-300 bg-gray-900/50 p-1.5 rounded">
+                        <span className="text-gray-500 w-12 text-xs">代墊人</span>
+                        <span className="font-bold text-yellow-300">{expPayer}</span>
+                      </div>
+                      <div className="flex items-start text-gray-300 bg-gray-900/50 p-1.5 rounded">
+                        <span className="text-gray-500 w-12 text-xs mt-0.5">需分攤</span>
+                        <div className="flex-1">
+                          <div className="text-yellow-600 font-mono text-xs mb-1">( 每人 NT$ {perPerson} )</div>
+                          <div className="text-xs leading-relaxed">
+                            {expSplitAmong.length === PARTICIPANTS.length ? (
+                              <span className="text-blue-300 border border-blue-800 bg-blue-900/30 px-1.5 py-0.5 rounded">全員均分</span>
+                            ) : (
+                              <span className="text-gray-400">{expSplitAmong.join('、')}</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      );
+    };
+
+    // --- 主程式 ---
+    const App = () => {
+      const [activeTab, setActiveTab] = useState('itinerary');
+      const [notes, setNotes] = useState({});
+      const [expenses, setExpenses] = useState([]);
+      const [isLoaded, setIsLoaded] = useState(false);
+
+      useEffect(() => {
+        const savedNotes = localStorage.getItem('escapeRoomNotes');
+        const savedExpenses = localStorage.getItem('escapeRoomExpenses');
+        if (savedNotes) setNotes(JSON.parse(savedNotes));
+        if (savedExpenses) setExpenses(JSON.parse(savedExpenses));
+        setIsLoaded(true);
+      }, []);
+
+      useEffect(() => {
+        if (isLoaded) localStorage.setItem('escapeRoomNotes', JSON.stringify(notes));
+      }, [notes, isLoaded]);
+
+      useEffect(() => {
+        if (isLoaded) localStorage.setItem('escapeRoomExpenses', JSON.stringify(expenses));
+      }, [expenses, isLoaded]);
+
+      return (
+        <div className="min-h-screen bg-[#0a0a0a] text-gray-200 pb-[72px]">
+          <header className="bg-black border-b border-yellow-900/50 p-4 sticky top-0 z-20 shadow-lg shadow-black/50">
+            <h1 className="text-center text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600 tracking-wider">
+              謎霧行動：台中48小時
+            </h1>
+          </header>
+
+          <main className="max-w-md mx-auto w-full">
+            {activeTab === 'itinerary' && <ItineraryTab notes={notes} setNotes={setNotes} />}
+            {activeTab === 'stores' && <StoresTab />}
+            {activeTab === 'expenses' && <ExpensesTab expenses={expenses} setExpenses={setExpenses} />}
+          </main>
+
+          <nav className="fixed bottom-0 left-0 right-0 bg-black border-t border-gray-800 z-30 pb-safe">
+            <div className="flex justify-around items-center max-w-md mx-auto h-[72px]">
+              <button onClick={() => setActiveTab('itinerary')} className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${activeTab === 'itinerary' ? 'text-yellow-500' : 'text-gray-500'}`}>
+                <Icon name="MapIcon" size={24} />
+                <span className="text-xs font-medium">行動路徑</span>
+              </button>
+              <button onClick={() => setActiveTab('stores')} className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${activeTab === 'stores' ? 'text-yellow-500' : 'text-gray-500'}`}>
+                <Icon name="Search" size={24} />
+                <span className="text-xs font-medium">情報局</span>
+              </button>
+              <button onClick={() => setActiveTab('expenses')} className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${activeTab === 'expenses' ? 'text-yellow-500' : 'text-gray-500'}`}>
+                <Icon name="CircleDollarSign" size={24} />
+                <span className="text-xs font-medium">軍費管理</span>
+              </button>
+            </div>
+          </nav>
+        </div>
+      );
+    };
+
+    // 啟動 React 應用程式
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
